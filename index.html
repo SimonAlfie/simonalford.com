@@ -21,7 +21,7 @@
 			document.body.appendChild( renderer.domElement );
 
 			var orbit = new THREE.OrbitControls( camera, renderer.domElement );
-			orbit.enableZoom = false;
+			orbit.enableZoom = true;
 
 			var material = new THREE.MeshPhongMaterial({
 					color: 0x00ff00,
@@ -29,16 +29,20 @@
 					side: THREE.DoubleSide,
 					shading: THREE.FlatShading
 				});
+			
+			var lineMaterial = new THREE.LineBasicMaterial({
+					color: 0xffffff,
+					transparent: true,
+					opacity: 0.5
+				});
 
-//			var geometry = new THREE.BoxGeometry( 15, 15, 15 );
-
-			for(var i = 0; i < 6; i++) {
-				var geometry = new THREE.Geometry();
-
-				var width = 2;
-				var height = 10;
+			var flake = new THREE.Object3D();
+			
+			function createBranch(width, height, depth) {
+				var branch = new THREE.Object3D();
 				var halfWidth = width / 2;
-
+				var geometry = new THREE.Geometry();
+				
 				geometry.vertices.push(
 					new THREE.Vector3( -halfWidth,  0,  0),
 					new THREE.Vector3(  halfWidth,  0,  0),
@@ -50,15 +54,39 @@
 					new THREE.Face3(0,1,2),
 					new THREE.Face3(1,2,3)
 				 );
+				
+				branch.add(new THREE.Mesh( geometry, material ));
+				branch.add(new THREE.LineSegments( geometry, lineMaterial ))
+				
+				if(depth) {
+					var subBranch = createBranch(width/4, height/4, depth -1);
+					subBranch.translateY(height);
+					var subBranch2 = subBranch.clone();
+					subBranch.rotateZ(2 * Math.PI / 6);
+					subBranch2.rotateZ(-2 * Math.PI / 6);
+					branch.add(subBranch);
+					branch.add(subBranch2);
+				}
+				
+				return branch;
+			};
+			
+			var width = 2;
+			var height = 10;
+			var branch = createBranch(width, height, 1);
+			flake.add( branch );
 
-				geometry.rotateZ((2 * Math.PI / 6) * i);
+			for(var i = 1; i < 6; i++) {
+				branch = branch.clone();
+				branch.rotateZ(2 * Math.PI / 6);
+				flake.add( branch );
 
 	//			geometry.computeBoundingSphere();
 
-				var mesh = new THREE.Mesh( geometry, material );
-				scene.add( mesh );
 			}
 
+			scene.add(flake);
+			
 			var ambientLight = new THREE.AmbientLight( 0x000000 );
 			scene.add( ambientLight );
 
@@ -80,8 +108,8 @@
 			function render() {
 				requestAnimationFrame( render );
 
-//				mesh.rotation.x += 0.005;
-//				mesh.rotation.y += 0.005;
+				flake.rotation.x += 0.005;
+				flake.rotation.y += 0.005;
 
 				renderer.render( scene, camera );
 			}
