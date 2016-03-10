@@ -42,17 +42,22 @@
 				var branch = new THREE.Object3D();
 				var halfWidth = width / 2;
 				var geometry = new THREE.Geometry();
+				var tanX = Math.tan(Math.PI/3) * halfWidth;
 				
 				geometry.vertices.push(
-					new THREE.Vector3( -halfWidth,  0,  0),
-					new THREE.Vector3(  halfWidth,  0,  0),
-					new THREE.Vector3( -halfWidth,  height,  0),
-					new THREE.Vector3(  halfWidth,  height,  0)
+					new THREE.Vector3( -halfWidth,  tanX,  0),
+					new THREE.Vector3( -halfWidth,  height - tanX,  0),
+					new THREE.Vector3( 0,  0,  0),
+					new THREE.Vector3( 0,  height,  0),
+					new THREE.Vector3(  halfWidth,  tanX,  0),
+					new THREE.Vector3(  halfWidth,  height - tanX,  0)
 				);
 
 				geometry.faces.push( 
 					new THREE.Face3(0,1,2),
-					new THREE.Face3(1,2,3)
+					new THREE.Face3(1,2,3),
+					new THREE.Face3(2,3,4),
+					new THREE.Face3(3,4,5)
 				 );
 				
 				branch.add(new THREE.Mesh( geometry, material ));
@@ -60,9 +65,11 @@
 				
 				if(depth) {
 					var subBranch = createBranch(width/4, height/4, depth -1);
-					subBranch.translateY(height);
+					subBranch.translateY(height - tanX);
 					var subBranch2 = subBranch.clone();
+					subBranch.translateX(-halfWidth);
 					subBranch.rotateZ(2 * Math.PI / 6);
+					subBranch2.translateX(halfWidth);
 					subBranch2.rotateZ(-2 * Math.PI / 6);
 					branch.add(subBranch);
 					branch.add(subBranch2);
@@ -73,7 +80,7 @@
 			
 			var width = 2;
 			var height = 10;
-			var branch = createBranch(width, height, 1);
+			var branch = createBranch(width, height, 2);
 			flake.add( branch );
 
 			for(var i = 1; i < 6; i++) {
@@ -108,8 +115,8 @@
 			function render() {
 				requestAnimationFrame( render );
 
-				flake.rotation.x += 0.005;
-				flake.rotation.y += 0.005;
+				//flake.rotation.x += 0.005;
+				//flake.rotation.y += 0.005;
 
 				renderer.render( scene, camera );
 			}
