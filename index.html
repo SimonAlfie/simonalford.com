@@ -16,7 +16,7 @@
 			var scene = new THREE.Scene();
 			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
-			var renderer = new THREE.WebGLRenderer();
+			var renderer = new THREE.WebGLRenderer({ antialias : true});
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
@@ -24,8 +24,8 @@
 			orbit.enableZoom = true;
 
 			var material = new THREE.MeshPhongMaterial({
-					color: 0x00ff00,
-					emissive: 0x002200,
+					color: 0xffffff,
+					emissive: 0x6666ff,
 					side: THREE.DoubleSide,
 					shading: THREE.FlatShading
 				});
@@ -37,20 +37,26 @@
 				});
 
 			var flake = new THREE.Object3D();
+			//var tan120 = Math.tan(Math.PI/3);
+			var tan60 = Math.tan(Math.PI/3);
+			var tan30 = Math.tan(Math.PI/6);
+			var cos30 = Math.tan(Math.PI/6);
 			
-			function createBranch(width, height, depth) {
+			function createBranch(width, height, wideTip, depth, subBranches) {
 				var branch = new THREE.Object3D();
 				var halfWidth = width / 2;
 				var geometry = new THREE.Geometry();
-				var tanX = Math.tan(Math.PI/3) * halfWidth;
+				var offset = tan60 * halfWidth;
+				var subOffset = tan30 * halfWidth;
+				var tipOffset = wideTip ? subOffset  : offset;
 				
 				geometry.vertices.push(
-					new THREE.Vector3( -halfWidth,  tanX,  0),
-					new THREE.Vector3( -halfWidth,  height - tanX,  0),
+					subBranches ? new THREE.Vector3( -halfWidth,  subOffset,  0) : new THREE.Vector3( -halfWidth,  offset,  0),
+					new THREE.Vector3( -halfWidth,  height - tipOffset,  0),
 					new THREE.Vector3( 0,  0,  0),
 					new THREE.Vector3( 0,  height,  0),
-					new THREE.Vector3(  halfWidth,  tanX,  0),
-					new THREE.Vector3(  halfWidth,  height - tanX,  0)
+					subBranches ? new THREE.Vector3( halfWidth,  -subOffset,  0) : new THREE.Vector3(  halfWidth,  offset,  0),
+					new THREE.Vector3(  halfWidth,  height - tipOffset,  0)
 				);
 
 				geometry.faces.push( 
@@ -61,18 +67,24 @@
 				 );
 				
 				branch.add(new THREE.Mesh( geometry, material ));
-				branch.add(new THREE.LineSegments( geometry, lineMaterial ))
+				//branch.add(new THREE.LineSegments( geometry, lineMaterial ))
 				
-				if(depth) {
-					var subBranch = createBranch(width/4, height/4, depth -1);
-					subBranch.translateY(height - tanX);
-					var subBranch2 = subBranch.clone();
-					subBranch.translateX(-halfWidth);
-					subBranch.rotateZ(2 * Math.PI / 6);
-					subBranch2.translateX(halfWidth);
-					subBranch2.rotateZ(-2 * Math.PI / 6);
-					branch.add(subBranch);
-					branch.add(subBranch2);
+				if(depth && subBranches) {
+					for(var i = 0; i < subBranches; i++) {
+						var sbHeight = height/4;
+						var sbWidth = width < sbHeight ? width : sbHeight;
+						var widthOffset = (sbWidth / cos30) / 2; 
+						var subBranch = createBranch(sbWidth, sbHeight, wideTip, depth - 1, 1);						
+						subBranch.translateY(((height - tipOffset - widthOffset) / subBranches) * (i + 1));
+						var subBranch2 = subBranch.clone();
+						subBranch.translateX(-halfWidth);
+						subBranch.rotateZ(2 * Math.PI / 6);
+						subBranch.rotateY(Math.PI);
+						subBranch2.translateX(halfWidth);
+						subBranch2.rotateZ(-2 * Math.PI / 6);
+						branch.add(subBranch);
+						branch.add(subBranch2);
+					}
 				}
 				
 				return branch;
@@ -80,7 +92,7 @@
 			
 			var width = 2;
 			var height = 10;
-			var branch = createBranch(width, height, 2);
+			var branch = createBranch(width, height, true, 2, 2);
 			flake.add( branch );
 
 			for(var i = 1; i < 6; i++) {
